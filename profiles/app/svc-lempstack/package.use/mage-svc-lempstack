@@ -1,0 +1,3 @@
+app-eselect/eselect-php fpm
+dev-lang/php bcmath calendar cli crypt curl fpm gd gmp inifile imap mysqli mysqlnd pdo sockets ssl xmlreader 
+www-server/nginx dav dav_ext gzip_static spdy

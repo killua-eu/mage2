@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../profiles"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+echo "GETTING MAGE DIRECTORIES"
+echo "$DIR"
+echo "$SCRIPT"
+echo "$LIBDIR"
+echo "$VARDIR"
+echo "$ETCDIR"
+echo ""
+
+
+echo "TESTING FUNCTION INCLUDES:"
+echo "... loading color test"
+
+testcolors
+

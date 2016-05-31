@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../profiles"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+[ -f "/etc/portage/make.conf" ] && source "/etc/portage/make.conf"      # include make.conf
+[ -f "${ETCDIR}/bootstrap.conf" ] && source "${ETCDIR}/bootstrap.conf"  # include bootstrap.conf
+
+case "$1" in 
+  help|-h|--h)
+    einfo "Bootstraps your system"
+  ;;
+  prepare)  
+    ${BINDIR}/mage.bootstrap.net-test
+    ${BINDIR}/mage.bootstrap.net-sshd
+    ${BINDIR}/mage.bootstrap.disks-setup
+    ${BINDIR}/mage.bootstrap.env-chroot
+  ;;
+  install)  
+    ${BINDIR}/mage.bootstrap.env-configure
+    ${BINDIR}/mage.bootstrap.env-userspace
+    ${BINDIR}/mage.bootstrap.env-kernel
+    ${BINDIR}/mage.bootstrap.env-user
+    ${BINDIR}/mage.bootstrap.env-bootloader
+  ;;
+  reenter)
+    ${BINDIR}/mage.bootstrap.disks-remount
+    ${BINDIR}/mage.bootstrap.env-chroot
+  ;;
+  *)
+    eexit "Command ${BOLD}${1}${NORMAL} not recognized, exitting. Try ${BOLD}mage.bootstrap help${NORMAL}"
+  ;;
+esac
+
+
