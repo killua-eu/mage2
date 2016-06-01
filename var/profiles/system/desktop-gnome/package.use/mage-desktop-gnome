@@ -1,0 +1,14 @@
+dev-qt/qtgui gtkstyle
+dev-qt/qtwidgets gtkstyle
+gnome-base/gvfs afp archive gphoto2 ios mtp nfs samba zeroconf
+gnome-extra/gnome-boxes usbredir
+media-gfx/sane-backends avahi
+media-sound/pulseaudio equalizer
+media-video/vlc faad live mtp rtsp speex vpx x265
+net-dns/avahi gtk3 utils
+net-print/cups zeroconf
+net-print/cups-filters zeroconf
+net-print/gutenprint cups gtk ppds
+net-print/gutenprint gimp
+net-print/hplip scanner snmp
+net-voip/telepathy-gabble gnutls

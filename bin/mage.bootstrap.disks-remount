@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../var"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+[ -f "/etc/portage/make.conf" ] && source "/etc/portage/make.conf"      # include make.conf
+[ -f "${ETCDIR}/bootstrap.conf" ] && source "${ETCDIR}/bootstrap.conf"  # include bootstrap.conf
+
+    echo ""
+    ewarn "Remounting partitions should be only required if an unexpected reboot during the installation occured. Oterwise, you might just fuck up (luckily not too badly) your install. Quit with Ctrl+C or continue"
+    disks_info
+
+    ewarn "Now a teaser, you gotta remember what disk layout you installed (probably the default marked with *):"
+    select_script "${VARDIR}/layouts" ${BOOTSTRAP_PART_SCHEME} "choice"
+    . "${VARDIR}/layouts/${choice}" || eexit "Can't load ${VARDIR}/layouts/${choice}"
+    disks_do_remount

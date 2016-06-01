@@ -12,10 +12,10 @@ elif (command -v tput && tput colors) >/dev/null 2>&1; then
 	BRACKET="$(tput sgr0)$(tput bold)$(tput setaf 4)"
 	NORMAL="$(tput sgr0)"
 	BOLD="$(tput sgr0)$(tput bold)"
-	MINFO="${BRACKET}** ${NORMAL}"
-	MWARN="${WARN}** ${NORMAL}"
-	MFAIL="${BAD}!! ${NORMAL}"
-	MDONE="${GOOD}** ${NORMAL}"
+	MINFO="${BRACKET}**${BOLD}"
+	MWARN="${WARN}>>${BOLD}"
+	MFAIL="${BAD}!!${BOLD}"
+	MDONE="${GOOD}**${BOLD}"
 else
 	GOOD=$(printf '\033[32;01m')
 	WARN=$(printf '\033[33;01m')
@@ -24,9 +24,9 @@ else
 	BRACKET=$(printf '\033[34;01m')
 	NORMAL=$(printf '\033[0m')
 	HEAD=  $(printf '\033[01m') 
-	MINFO="${BRACKET}** ${NORMAL}"
-	MWARN="${WARN}** ${NORMAL}"
-	MFAIL="${BAD}!! ${NORMAL}"
-	MDONE="${GOOD}** ${NORMAL}"
+	MINFO="${BRACKET}**${BOLD}"
+	MWARN="${WARN}>>${BOLD}"
+	MFAIL="${BAD}!!${BOLD}"
+	MDONE="${GOOD}**${BOLD}"
 fi
 

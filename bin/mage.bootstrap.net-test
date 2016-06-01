@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../profiles"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+[ -f "/etc/portage/make.conf" ] && source "/etc/portage/make.conf"      # include make.conf
+[ -f "${ETCDIR}/bootstrap.conf" ] && source "${ETCDIR}/bootstrap.conf"  # include bootstrap.conf
+
+
+net_test() {
+    einfo "Testing network connection ..."
+
+    ping -c 1 8.8.8.8 || {
+        echo  ""
+        efail "The network is dead, check physical connection."
+        efail "If all's right, you need to configure your network manually. If you booted"
+        efail "a Gentoo minimal ISO, try running run ${HILITE}net-setup <interface-name>${NORMAL}."
+        efail "Even though net-setup is screwed up (Aug 2015), it might help you."
+        efail "Your active interfaces including lo are:"
+        echo  "";
+        ifconfig -a | sed 's/[ \t].*//;/^$/d' | sed 's/.$//'
+        echo  "";
+        efail "(for more run ${HILITE}ifconfig${NORMAL}). An example of the /etc/conf.d/net file for a static"
+        eexit "IP setup is in ${BOLD}${DIR}/bootstrap/files/static-conf.d-net${NORMAL}"
+    }
+
+    ping -c 1 google.com || {
+        echo  "";
+        efail "Your network connection works, but DNS doesn't." 
+        efail "Try using a public DNS server, i.e. Google's 8.8.8.8. To do this, just run" 
+        eexit "${HILITE}echo 'nameserver 8.8.8.8' >> /etc/resolv.conf'${NORMAL}."
+    }
+    
+    echo "" ; edone "Network connection seems to work just fine." ; exit 0 ;
+    
+}
+
+net_test

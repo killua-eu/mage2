@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../profiles"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+[ -f "/etc/portage/make.conf" ] && source "/etc/portage/make.conf"      # include make.conf
+[ -f "${ETCDIR}/bootstrap.conf" ] && source "${ETCDIR}/bootstrap.conf"  # include bootstrap.conf
+
+net_sshd() {
+    [[ `whoami` = "root" ]] || eexit "You have to be root to do this."
+    einfo "Starting sshd ..."
+    initsys=`cat /proc/1/comm`
+    
+    
+    case "${initsys}" in
+    systemd) 
+        systemctl start sshd || eexit "sshd could not be started"
+    ;;
+    openrc)
+        /etc/init.d/sshd start || eexit "sshd could not be started"
+    ;;
+    *)
+        ewarn "Unknown init system, please start sshd manually yourself."
+    ;;
+    esac
+    
+    [[ -v MAGE_BOOTSTRAP_UNAME ]] || einfo "Enter temporary (install-time) username: " && read MAGE_BOOTSTRAP_UNAME
+    [[ -v MAGE_BOOTSTRAP_UPASS ]] || einfo "Enter temporary (install-time) password for user ${MAGE_BOOTSTRAP_UNAME}: " && read MAGE_BOOTSTRAP_UPASS
+    [[ -v MAGE_BOOTSTRAP_RPASS ]] || einfo "Enter temporary (install-time) root password: " && read MAGE_BOOTSTRAP_RPASS
+ 
+    # TODO rewrite the useradd so that
+    # 1. relevant groups to root are always added (when booting from an ubuntu flash disk, you need useradd -m -G users,adm,plugdev,cdrom,sudo)
+    # 2. add only to groups that exist - the original code is gentoo specific, ubuntu for example doesnt use the wheel group (but has sudo).
+    #    forcing the wheel group on ubuntu will just fail here
+    ADDGROUPS=""
+    [[ `cat /etc/group | grep wheel` ]] && ADDGROUPS=",wheel"
+    [[ `cat /etc/group | grep sudo` ]] && ADDGROUPS=",sudo"
+    [[ `cat /etc/group | grep users` ]] && ADDGROUPS=",users"
+    ADDGROUPS=${ADDGROUPS:1}
+    
+    einfo "Adding user ${HILITE}${MAGE_BOOTSTRAP_UNAME}${BOLD} to groups ${HILITE}${ADDGROUPS}${BOLD} and setting the root password ..."
+    useradd -m -G ${ADDGROUPS} ${MAGE_BOOTSTRAP_UNAME} || eexit "Failed to create user ${MAGE_BOOTSTRAP_UNAME}"
+    echo "${MAGE_BOOTSTRAP_UNAME}:${MAGE_BOOTSTRAP_UPASS}" | chpasswd || eexit "Changing ${MAGE_BOOTSTRAP_UNAME}'s password failed"
+    echo "root:${MAGE_BOOTSTRAP_RPASS}" | chpasswd || eexit "Changing root password failed"
+    edone "You're now ready to connect to the installation environment over ssh by issuing"
+    edone "${HILITE}ssh ${MAGE_BOOTSTRAP_UNAME}@<ipaddress>${BOLD} on your remote desktop."
+}
+
+net_sshd

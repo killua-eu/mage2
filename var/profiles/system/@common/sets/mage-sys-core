@@ -1,0 +1,7 @@
+sys-apps/pciutils
+sys-apps/smartmontools
+sys-apps/usbutils
+sys-kernel/dracut
+sys-kernel/gentoo-sources
+sys-kernel/linux-firmware
+sys-process/cronie
