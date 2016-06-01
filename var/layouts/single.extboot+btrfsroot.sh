@@ -5,6 +5,14 @@
 # ### private functions
 #######################
 
+disks_banner() {
+
+echo ""
+einfo "Single disk with a bios/boot/swap/btrfs root partitioning scheme."
+echo ""
+
+}
+
 disks_makepart() {
 
     einfo "Partitioning ${1} according to a simple ${BOLD}biosboot, boot, swap, root${NORMAL} scheme"
@@ -96,6 +104,8 @@ disks_do_setup() {
 
     einfo "Set the disk to install stuff on (usually /dev/sda)" && read dev1
     disks_makepart "${dev1}"
+    # fun fact: nvme partitions have a leading p /dev/nvme01p1, partitions of all other disks do without it /dev/sda1
+    [[ `echo "${dev1}" | grep nvme` ]] && dev1="${dev1}p" 
     disks_makefs "${dev1}"
     disks_mount "${dev1}"
 
@@ -104,6 +114,8 @@ disks_do_setup() {
 disks_do_remount() {    
 
     einfo "Set the disk to install stuff on (usually /dev/sda)" && read dev1
+    # fun fact: nvme partitions have a leading p /dev/nvme01p1, partitions of all other disks do without it /dev/sda1
+    [[ `echo "${dev1}" | grep nvme` ]] && dev1="${dev1}p" 
     disks_mount "${dev1}"
 
 }  
@@ -122,18 +134,15 @@ grub2-mkconfig -o /boot/grub/grub.cfg
 echo "
 # <fs>              <mountpoint>    <type>      <opts>                                                                         <dump/pass>
 LABEL="boot"        /boot           ext4        noauto,noatime                                                                  1 2
+LABEL="swap"        none            swap        sw                                                                              0 0
 LABEL="btrfs"       /               btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@                   0 0
 LABEL="btrfs"       /tmp            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/tmp     0 0
 LABEL="btrfs"       /var            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var               0 0
 LABEL="btrfs"       /root           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root              0 0
 LABEL="btrfs"       /home           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home              0 0
-
 LABEL="btrfs"       /var/log        btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/var/log 0 0
 LABEL="btrfs"       /usr/portage    btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=PORTAGE   0 0
-LABEL="swap"        none            swap        sw                                                                              0 0
 " >> /etc/fstab
-
-
 }
    
     

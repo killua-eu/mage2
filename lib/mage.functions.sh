@@ -115,13 +115,14 @@ select_script() { # pass path to dir as $1 and default from configuration option
    
     echo "";
     popd > /dev/null
-    einfo "Select preffered option (or just press enter to default to option selected by your bootstrap.conf)"
+    echo "";
+    einfo "Select preffered option (or just press enter to default to option selected by your bootstrap.conf). If unsure press CTRL+C to exit 
+    and try ${HILITE}lsblk -O${BOLD} (see lsblk -h on howto reduce information overload) and ${HILITE}parted -l${BOLD} to make up your mind." 
     
-        
     while [[ -z "$selected" ]]
     do
         read -r option; # read user input and use default on enter, if default is set
-        if [ -z $x ] ; then
+        if [ -z $option ] ; then
            [[ -n "${default}" ]] && echo "${default}" && selected="${default}"
            [[ -n "${default}" ]] || echo "No default configured, please choose one of the options above and retry."
         else # if a value is given, test if its a number and a valid array item

@@ -13,7 +13,7 @@ if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 [[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
 [[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
 [[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
-[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../profiles"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../var"
 [[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
 
 for file in ${LIBDIR}/* ; do
@@ -32,14 +32,7 @@ done
 
     disks_info
     einfo "Please select one of the following options:"
-    einfo "[1] Single disk: 1x biosboot + ext4 /boot + swap + btrfs root"
-    einfo "[2] Two disks: 2x biosboot + mdraid1.ext4 /boot + mdraid1.ext4 swap + btrfs.raid1 root (currently disabled)"
-    echo ""
-    ewarn "Your bootstrap conf defaults to <${BOOTSTRAP_PART_SCHEME}>. Need more info to decide? CTRL+C and try ${HILITE}lsblk -O${BOLD} (see lsblk -h on howto reduce information overload) and ${HILITE}parted -l${BOLD}. When ready, restart ${HILITE}mage.bootstrap.disks-setup${BOLD}. Press enter to agree, or type in your choice: " && read choice
-        [[ "$choice" = "" ]] && choice="${BOOTSTRAP_PART_SCHEME}"
-        [[ "$choice" = "single.extboot+btrfsroot" ]] && choice="1"  
-        # TODO rewrite this mess into something normal scananing the ${LIBDIR}/bootstrap/disks for possibilities
-    efail "Continuing here will permanently delete any data on disks you play with!"
-    select_script "${LIBDIR}/bootstrap/disks" ${BOOTSTRAP_PART_SCHEME} "choice"
-    . "${LIBDIR}/bootstrap/disks/${choice}" || eexit "Can't load ${LIBDIR}/bootstrap/disks/${choice}"
+
+    select_script "${VARDIR}/layouts" ${BOOTSTRAP_PART_SCHEME} "choice"
+    . "${VARDIR}/layouts/${choice}" || eexit "Can't load ${VARDIR}/layouts/${choice}"
     disks_do_setup

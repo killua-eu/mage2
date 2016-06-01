@@ -5,27 +5,27 @@
 # ### private functions
 #######################
 
+disks_banner() {
+
+echo ""
+einfo "Single nvme ssd disk with a uefi boot/swap/btrfs root partitioning scheme."
+echo ""
+
+}
+
 disks_makepart() {
 
-    einfo "Partitioning ${1} according to a simple ${BOLD}biosboot, boot, swap, root${NORMAL} scheme"
+    einfo "Partitioning ${1} (uefi, swap, root scheme) ..."
     blockfile_exists "${1}"
-    [[ -v MAGE_PARTED_DEF_BIOS ]] || MAGE_PARTED_DEF_BIOS=8M
-    [[ -v MAGE_PARTED_DEF_BOOT ]] || MAGE_PARTED_DEF_BOOT=500M
-    [[ -v MAGE_PARTED_DEF_SWAP ]] || MAGE_PARTED_DEF_SWAP=12G
-    # MAGE_PARTED_DEF_ROOT defined in mage.conf with explanation that it will be ignored here
-    # and the rest of the disk's space will be used for the root partition
-
-    parted -a optimal ${1} mklabel gpt                                                             # convert mbr to gpt
-    sgdisk -o ${1}                                                                                 # clear partition table
-    FS=`sgdisk -F ${1}` ; sgdisk -n 1:${FS}:${MAGE_PARTED_DEF_BIOS} -c 1:"biosboot" -t 1:ef02 ${1} # GRUB partition (4MB)
-    FS=`sgdisk -F ${1}` ; sgdisk -n 2:${FS}:${MAGE_PARTED_DEF_BOOT} -c 2:"boot" -t 2:8300 ${1}     # /boot partition (400M)
-    FS=`sgdisk -F ${1}` ; sgdisk -n 3:${FS}:${MAGE_PARTED_DEF_SWAP} -c 3:"swap" -t 3:8200 ${1}     # swap partition
+    
+    sgdisk -o ${1}                                                                    # clear & create new gpt
+    FS=`sgdisk -F ${1}` ; sgdisk -a 4096 -n 1:${FS}:500M  -c 1:"uefi"  -t 1:ef00 ${1} # uefi partition
+    FS=`sgdisk -F ${1}` ; sgdisk -a 4096 -n 2:${FS}:16G   -c 3:"swap"  -t 3:8200 ${1} # swap partition
     FS=`sgdisk -F ${1}` ; 
-    ES=`sgdisk -E ${1}` ; sgdisk -n 4:${FS}:${ES} -c 4:"btrfs" -t 4:8300 ${1}                      # btrfs root partition
+    ES=`sgdisk -E ${1}` ; sgdisk -a 4096 -n 3:${FS}:${ES} -c 4:"btrfs" -t 4:8300 ${1} # btrfs root partition
     echo ""
-    edone "Partitioning done, the resulting scheme is below for your pleasure:"
+    edone "Partitioning done, the resulting scheme is:"
     sgdisk -p ${1}
-    # TODO catch return codes of sgdisk and parted
 
 }
 
@@ -41,14 +41,16 @@ disks_makefs() {
     blockfile_exists "${1}3"
     blockfile_exists "${1}4"
     ### Create filesystems
-    mkfs.btrfs -f -L "btrfs" "${1}4" || eexit "mkfs.btrfs (root) failed"
-    mkfs.ext4 -L "boot" "${1}2" || eexit "mkfs.ext4 (boot) failed"
-    mkswap -L "swap" "${1}3" || eexit "mkswap failed"
-    swapon "${1}3" || eexit "swapon failed"
+    
+    mkfs.vfat -F32 -L "uefi" "${1}1" || eexit "mkfs.vfat (uefi boot) failed"
+    mkswap -L "swap" "${1}2" || eexit "mkswap failed"
+    swapon "${1}2" || eexit "swapon failed"
+    mkfs.btrfs -f -L "btrfs" "${1}3" || eexit "mkfs.btrfs (root) failed"
+    
     ### Create the subvolumes on the "${1}4" device
     # Temporarly mount the btrfs volume to /mnt/btrfs
     mkdir -p /mnt/btrfs
-    mount -t btrfs -o defaults,noatime,compress=lzo,autodefrag "${1}4" /mnt/btrfs || eexit "Failed mounting /mnt/btrfs"
+    mount -t btrfs -o defaults,noatime,compress=lzo,autodefrag "${1}3" /mnt/btrfs || eexit "Failed mounting /mnt/btrfs"
     sleep 1
     pushd /mnt/btrfs >> /dev/null
     # Create subvolumes
@@ -73,18 +75,18 @@ disks_mount() {
     echo ""
 
     mkdir -p /mnt/gentoo
-    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@ "${1}4" /mnt/gentoo || eexit "Failed mounting /mnt/gentoo"
+    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@ "${1}3" /mnt/gentoo || eexit "Failed mounting /mnt/gentoo"
     sleep 1
     mkdir -p /mnt/gentoo/{home,root,var,tmp,boot}
-    mount "${1}2" /mnt/gentoo/boot || eexit "Failed mounting /mnt/gentoo/boot"
-    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=@/tmp "${1}4" /mnt/gentoo/tmp || eexit "Failed mounting /mnt/gentoo/tmp"
-    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var  "${1}4" /mnt/gentoo/var  || eexit "Failed mounting /mnt/gentoo/var" 
-    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root "${1}4" /mnt/gentoo/root || eexit "Failed mounting /mnt/gentoo/root" 
-    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home "${1}4" /mnt/gentoo/home || eexit "Failed mounting /mnt/gentoo/home"
+    mount "${1}1" /mnt/gentoo/boot || eexit "Failed mounting /mnt/gentoo/boot"
+    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=@/tmp "${1}3" /mnt/gentoo/tmp || eexit "Failed mounting /mnt/gentoo/tmp"
+    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var  "${1}3" /mnt/gentoo/var  || eexit "Failed mounting /mnt/gentoo/var" 
+    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root "${1}3" /mnt/gentoo/root || eexit "Failed mounting /mnt/gentoo/root" 
+    mount -t btrfs -o defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home "${1}3" /mnt/gentoo/home || eexit "Failed mounting /mnt/gentoo/home"
     mkdir -p /mnt/gentoo/var/log
     mkdir -p /mnt/gentoo/usr/portage
-    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=@/var/log "${1}4" /mnt/gentoo/var/log || eexit "Failed mounting /mnt/gentoo/var/log"
-    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=PORTAGE "${1}4" /mnt/gentoo/usr/portage || eexit "Failed mounting mnt/gentoo/usr/portage"
+    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=@/var/log "${1}3" /mnt/gentoo/var/log || eexit "Failed mounting /mnt/gentoo/var/log"
+    mount -t btrfs -o defaults,space_cache,nodatacow,noatime,compress=lzo,autodefrag,subvol=PORTAGE "${1}3" /mnt/gentoo/usr/portage || eexit "Failed mounting mnt/gentoo/usr/portage"
     edone "All partitions and subvolumes mounted."
 }   
 #nodev,nosuid,noexec
@@ -96,6 +98,8 @@ disks_do_setup() {
 
     einfo "Set the disk to install stuff on (usually /dev/sda)" && read dev1
     disks_makepart "${dev1}"
+    # fun fact: nvme partitions have a leading p /dev/nvme01p1, partitions of all other disks do without it /dev/sda1
+    [[ `echo "${dev1}" | grep nvme` ]] && dev1="${dev1}p" 
     disks_makefs "${dev1}"
     disks_mount "${dev1}"
 
@@ -104,6 +108,8 @@ disks_do_setup() {
 disks_do_remount() {    
 
     einfo "Set the disk to install stuff on (usually /dev/sda)" && read dev1
+    # fun fact: nvme partitions have a leading p /dev/nvme01p1, partitions of all other disks do without it /dev/sda1
+    [[ `echo "${dev1}" | grep nvme` ]] && dev1="${dev1}p" 
     disks_mount "${dev1}"
 
 }  
@@ -113,8 +119,7 @@ disks_do_bootloader() { # used by bootstrap/env to install the bootloader
 einfo "Set the disk to install stuff on (usually /dev/*sda*)" && read dev1
 # GRUB_CMDLINE_LINUX should only append stuff relevnt to disk partitioning and fstype
 # it will be appended via ${1} from the bootstrap/env script with userspace settings (i.e. init=)
-echo "GRUB_CMDLINE_LINUX=\"rootfstype=btrfs rootflags=device=/dev/${dev1}4,subvol=@ dobtrfs ${1}\"" >> /etc/default/grub
-
+echo "GRUB_CMDLINE_LINUX=\"rootfstype=btrfs rootflags=device=/dev/${dev1}3,subvol=@ dobtrfs ${1}\"" >> /etc/default/grub
 
 grub2-install "/dev/${dev1}"
 #grub2-install "/dev/${dev2}" # raid1 setup
@@ -122,15 +127,14 @@ grub2-mkconfig -o /boot/grub/grub.cfg
 echo "
 # <fs>              <mountpoint>    <type>      <opts>                                                                         <dump/pass>
 LABEL="boot"        /boot           ext4        noauto,noatime                                                                  1 2
+LABEL="swap"        none            swap        sw                                                                              0 0
 LABEL="btrfs"       /               btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@                   0 0
 LABEL="btrfs"       /tmp            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/tmp     0 0
 LABEL="btrfs"       /var            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var               0 0
 LABEL="btrfs"       /root           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root              0 0
 LABEL="btrfs"       /home           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home              0 0
-
 LABEL="btrfs"       /var/log        btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/var/log 0 0
 LABEL="btrfs"       /usr/portage    btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=PORTAGE   0 0
-LABEL="swap"        none            swap        sw                                                                              0 0
 " >> /etc/fstab
 
 
