@@ -1,0 +1,9 @@
+media-gfx/gimp
+media-gfx/argyllcms
+media-gfx/xsane
+media-gfx/sane-backends
+media-gfx/simple-scan 
+net-print/cups
+net-print/cups-filters
+net-print/gutenprint
+net-print/hplip

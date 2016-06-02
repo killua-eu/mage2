@@ -1,0 +1,16 @@
+# Scanning, printing, video
+media-sound/alsa-utils
+media-sound/alsa-tools
+media-video/vlc
+
+# Networking
+net-misc/networkmanager
+net-misc/networkmanager-openvpn
+net-misc/networkmanager-pptp
+net-misc/networkmanager-sstp
+net-misc/remmina
+net-p2p/transmission
+sys-apps/usb_modeswitch
+
+# Tools
+x11-terms/sakura

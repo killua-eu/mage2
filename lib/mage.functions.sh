@@ -31,6 +31,7 @@ firstboot() {
           echo "$@" >> "/var/mage/firstboot/${1}" || eexit "Couldn't write to /var/mage/firstboot/${1} file"
         else
           eexit "Incorrect firstboot() directive"
+        fi
     else
         set -x; "$@"; set +x;
     fi

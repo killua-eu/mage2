@@ -5,7 +5,7 @@ gnome-extra/gnome-boxes usbredir
 media-gfx/sane-backends avahi
 media-sound/pulseaudio equalizer
 media-video/vlc faad live mtp rtsp speex vpx x265
-net-dns/avahi gtk3 utils
+net-dns/avahi utils gtk3
 net-print/cups zeroconf
 net-print/cups-filters zeroconf
 net-print/gutenprint cups gtk ppds

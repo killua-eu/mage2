@@ -1,0 +1,17 @@
+# Gnome propper
+gnome-base/gnome
+
+# Irreplaceble QT/KDE stuff
+kde-apps/kdebase-runtime-meta
+kde-apps/kompare
+kde-apps/konsole
+kde-apps/okular
+kde-misc/krename
+kde-misc/krusader
+
+
+# Nice fonts
+media-fonts/ubuntu-font-family
+media-fonts/roboto
+media-fonts/corefonts
+

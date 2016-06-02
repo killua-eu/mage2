@@ -4,7 +4,11 @@ eselect profile set "default/linux/amd64/13.0/desktop/gnome/systemd"
 echo "" && eselect profile show echo ""
 
 einfo "Emerging package sets"
-${BINDIR}/.mage.tmerge -uDN @mage-desktop-gnome
+${BINDIR}/mage.tmerge -uDN @mage-desktop-gnome-base
+${BINDIR}/mage.tmerge -uDN @mage-desktop-gnome-tools
+${BINDIR}/mage.tmerge -uDN @mage-desktop-gnome-print
+${BINDIR}/mage.tmerge -uDN @mage-desktop-gnome-office
+
 
 firstboot einfo "Enabling and starting services"
 firstboot 10desktop-gnome create systemctl enable gdm.service
