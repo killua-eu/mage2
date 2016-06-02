@@ -41,6 +41,7 @@ net-misc/networkmanager
 net-misc/networkmanager-openvpn
 net-misc/networkmanager-pptp
 net-misc/networkmanager-sstp
+net-misc/remmina
 net-p2p/transmission
 sys-apps/usb_modeswitch
 
@@ -50,5 +51,3 @@ www-plugins/adobe-flash
 
 # Tools
 x11-terms/sakura
-gnome-extra/gnome-boxes
-app-emulation/virt-manager

@@ -14,7 +14,6 @@ chrooted() {
 }
 
 
-
 firstboot() {
     # firstboot() detects if we're in a chroot and either executes a command, or queues it up
     # into the /var/mage/firstboot file. Here's why:
@@ -24,15 +23,18 @@ firstboot() {
     
     # Detect if we're in a chroot
     if [ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root/.)" ]; then
-        [[ -d "/var/mage" ]] || mkdir -p /var/mage || eexit "Couldn't create /var/mage directory"
-        [[ -f "/var/mage/firstboot" ]] || echo '#!/usr/bin/env bash' > /var/mage/firstboot || eexit "Couldn't write to /var/mage/firstboot file"
-        echo "$@" >> /var/mage/firstboot
+        [[ -d "/var/mage/firstboot" ]] || mkdir -p /var/mage/firstboot || eexit "Couldn't create /var/mage/firstboot directory"
+        if [ "${2}" = "create" ]; then
+          [[ -f "/var/mage/firstboot/${1}" ]] || echo '#!/usr/bin/env bash' > "/var/mage/firstboot/${1}" || eexit "Couldn't write to /var/mage/firstboot/${1} file"
+          echo "$@" >> "/var/mage/firstboot/${1}"
+        elif [ "${2}" = "append" ]; then
+          echo "$@" >> "/var/mage/firstboot/${1}" || eexit "Couldn't write to /var/mage/firstboot/${1} file"
+        else
+          eexit "Incorrect firstboot() directive"
     else
         set -x; "$@"; set +x;
     fi
 }
-
-
 
 ismounted() {
   mountpoint -q "${1}" && mount | grep "on ${1} " > /dev/null && return 0
