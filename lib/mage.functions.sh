@@ -79,7 +79,7 @@ blockfile_exists() {
     einfo "Looking for blockfiles ..."
     while [ "${1+defined}" ]
     do
-        [[ -b "$1" ]] && edone "${1}"
+        [[ -b "$1" ]] && edone "  ${1}"
         [[ -b "$1" ]] || { 
             efail "${1} not found" 
             error_flag=1

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# TODO QA on this file, compare with uefi.boot+btrfsroot.sh 
 
 #######################
 # ### private functions

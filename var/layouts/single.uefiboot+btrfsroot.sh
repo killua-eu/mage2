@@ -19,10 +19,10 @@ disks_makepart() {
     blockfile_exists "${1}"
     
     sgdisk -o ${1}                                                                    # clear & create new gpt
-    FS=`sgdisk -F ${1}` ; sgdisk -a 4096 -n 1:${FS}:500M  -c 1:"uefi"  -t 1:ef00 ${1} # uefi partition
-    FS=`sgdisk -F ${1}` ; sgdisk -a 4096 -n 2:${FS}:16G   -c 3:"swap"  -t 3:8200 ${1} # swap partition
+    FS=`sgdisk -F ${1}` ; sgdisk -n 1:${FS}:500M  -c 1:"UEFI"  -t 1:ef00 ${1} # uefi partition
+    FS=`sgdisk -F ${1}` ; sgdisk -n 2:${FS}:16G   -c 2:"SWAP"  -t 2:8200 ${1} # swap partition
     FS=`sgdisk -F ${1}` ; 
-    ES=`sgdisk -E ${1}` ; sgdisk -a 4096 -n 3:${FS}:${ES} -c 4:"btrfs" -t 4:8300 ${1} # btrfs root partition
+    ES=`sgdisk -E ${1}` ; sgdisk -n 3:${FS}:${ES} -c 3:"BTRFS" -t 3:8300 ${1} # btrfs root partition
     echo ""
     edone "Partitioning done, the resulting scheme is:"
     sgdisk -p ${1}
@@ -36,16 +36,15 @@ disks_makefs() {
     einfo "Setting up the filesystems"
     echo ""
     
-    ### Test if we have the blockfiles
-    blockfile_exists "${1}2"
-    blockfile_exists "${1}3"
-    blockfile_exists "${1}4"
-    ### Create filesystems
-    
-    mkfs.vfat -F32 -L "uefi" "${1}1" || eexit "mkfs.vfat (uefi boot) failed"
-    mkswap -L "swap" "${1}2" || eexit "mkswap failed"
+    ### Test if we have the blockfiles and make the filesystems
+    blockfile_exists "${1}1" "${1}2" "${1}3"
+    einfo "Making a FAT32 uefi boot filesystem ..."
+    mkfs.vfat -F32 -n "UEFI" "${1}1" || eexit "mkfs.vfat (uefi boot) failed"
+    einfo "Making SWAP ..."
+    mkswap -L "SWAP" "${1}2" || eexit "mkswap failed"
     swapon "${1}2" || eexit "swapon failed"
-    mkfs.btrfs -f -L "btrfs" "${1}3" || eexit "mkfs.btrfs (root) failed"
+    einfo "Making a BTRFS root filesystem, creating subvolumes ..."
+    mkfs.btrfs -f -L "BTRFS" "${1}3" || eexit "mkfs.btrfs (root) failed"
     
     ### Create the subvolumes on the "${1}4" device
     # Temporarly mount the btrfs volume to /mnt/btrfs
@@ -126,15 +125,15 @@ grub2-install "/dev/${dev1}"
 grub2-mkconfig -o /boot/grub/grub.cfg
 echo "
 # <fs>              <mountpoint>    <type>      <opts>                                                                         <dump/pass>
-LABEL="boot"        /boot           ext4        noauto,noatime                                                                  1 2
-LABEL="swap"        none            swap        sw                                                                              0 0
-LABEL="btrfs"       /               btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@                   0 0
-LABEL="btrfs"       /tmp            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/tmp     0 0
-LABEL="btrfs"       /var            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var               0 0
-LABEL="btrfs"       /root           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root              0 0
-LABEL="btrfs"       /home           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home              0 0
-LABEL="btrfs"       /var/log        btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/var/log 0 0
-LABEL="btrfs"       /usr/portage    btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=PORTAGE   0 0
+LABEL="UEFI"        /boot           ext4        noauto,noatime                                                                  1 2
+LABEL="SWAP"        none            swap        sw                                                                              0 0
+LABEL="BTRFS"       /               btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@                   0 0
+LABEL="BTRFS"       /tmp            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/tmp     0 0
+LABEL="BTRFS"       /var            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/var               0 0
+LABEL="BTRFS"       /root           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/root              0 0
+LABEL="BTRFS"       /home           btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@/home              0 0
+LABEL="BTRFS"       /var/log        btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/var/log 0 0
+LABEL="BTRFS"       /usr/portage    btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=PORTAGE   0 0
 " >> /etc/fstab
 
 

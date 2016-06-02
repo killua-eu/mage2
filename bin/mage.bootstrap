@@ -37,6 +37,7 @@ case "$1" in
     ${BINDIR}/mage.bootstrap.net-test
     ${BINDIR}/mage.bootstrap.net-sshd
     ${BINDIR}/mage.bootstrap.disks-setup
+    ${BINDIR}/mage.bootstrap.env-prepare
     ${BINDIR}/mage.bootstrap.env-chroot
   ;;
   install)  
@@ -47,6 +48,7 @@ case "$1" in
     ${BINDIR}/mage.bootstrap.env-bootloader
   ;;
   reenter)
+    ${BINDIR}/mage.bootstrap.net-test
     ${BINDIR}/mage.bootstrap.disks-remount
     ${BINDIR}/mage.bootstrap.env-chroot
   ;;
