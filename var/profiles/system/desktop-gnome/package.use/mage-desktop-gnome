@@ -1,15 +1,19 @@
-dev-qt/qtgui gtkstyle
-dev-qt/qtwidgets gtkstyle
+#dev-qt/qtgui gtkstyle
+#dev-qt/qtwidgets gtkstyle
 gnome-base/gvfs afp archive gphoto2 ios mtp nfs samba zeroconf
 gnome-extra/gnome-boxes usbredir
 media-gfx/sane-backends avahi
 media-sound/pulseaudio equalizer
 media-video/vlc faad live mtp rtsp speex vpx x265
 net-dns/avahi utils gtk3
-net-print/cups zeroconf
-net-print/cups-filters zeroconf
+net-print/cups
+net-print/cups-filters
 net-print/gutenprint cups gtk ppds
 net-print/gutenprint gimp
 net-print/hplip scanner snmp
 net-voip/telepathy-gabble gnutls
 sys-libs/zlib minizip
+media-plugins/grilo-plugins upnp-av
+gnome-base/gnome-control-center networkmanager
+www-servers/apache apache2_mpms_prefork # required by gnome-extras/gnome-user-share
+dev-libs/libgusb vala
