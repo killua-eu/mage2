@@ -12,3 +12,4 @@ net-print/gutenprint cups gtk ppds
 net-print/gutenprint gimp
 net-print/hplip scanner snmp
 net-voip/telepathy-gabble gnutls
+sys-libs/zlib minizip

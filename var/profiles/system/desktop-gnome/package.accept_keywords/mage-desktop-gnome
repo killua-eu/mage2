@@ -1,3 +1,5 @@
 media-fonts/roboto
 www-client/firefox-bin
 www-client/google-chrome
+net-misc/networkmanager-sstp
+net-misc/sstp-client
