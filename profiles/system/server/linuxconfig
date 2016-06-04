@@ -1,6 +1,0 @@
-#######################
-### Server
-#######################
-
-CONFIG_PREEMPT_NONE=y
-CONFIG_SCSI_LOWLEVEL=y
