@@ -1,6 +1,0 @@
-www-servers/nginx
-dev-lang/php
-dev-db/mysql
-dev-db/redis
-dev-php/composer
-net-libs/zeromq
