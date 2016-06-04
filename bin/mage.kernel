@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+# ##################
+# ### Load stuff ###
+# ##################
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+[ -f "/etc/mage/mage.conf" ] 	&& source "/etc/mage/mage.conf"
+[ -f "$DIR/mage.conf" ] 	&& source "$DIR/../etc/mage.conf"
+
+[[ -z ${SCRIPT} ]] && SCRIPT=`readlink -f $0`
+[[ -z ${BINDIR} ]] && BINDIR=`dirname "${SCRIPT}"`
+[[ -z ${LIBDIR} ]] && LIBDIR="${BINDIR}/../lib"
+[[ -z ${VARDIR} ]] && VARDIR="${BINDIR}/../var"
+[[ -z ${ETCDIR} ]] && ETCDIR="${BINDIR}/../etc"
+
+for file in ${LIBDIR}/* ; do
+  if [ -f "$file" ] ; then
+    . "$file"
+  fi
+done
+
+# ##################
+# ### Do stuff   ###
+# ##################
+
+[ -f "/etc/portage/make.conf" ] && source "/etc/portage/make.conf"      # include make.conf
+[ -f "${ETCDIR}/bootstrap.conf" ] && source "${ETCDIR}/bootstrap.conf"  # include bootstrap.conf
+
+#
+# Prepare
+# 
+
+pushd /usr/src/linux > /dev/null || eexit "No kernel installed in /usr/src/linux. Try ${BOLD}eselect kernel list${NORMAL} or ${BOLD}emerge gentoo-sources${NORMAL}"
+version=`readlink /usr/src/linux | cut -c7-`
+
+#
+# Make
+# 
+
+kernel_make() {
+    einfo "Running ${BOLD}make && make modules_install${NORMAL} on the (`readlink /usr/src/linux`) kernel"
+    make && make modules_install || eexit "Running ${BOLD}make && make modules_install${NORMAL} failed, exitting."
+}
+#
+# Install
+# 
+
+kernel_install() {
+    einfo "Installing the (`readlink /usr/src/linux`) kernel into /boot"
+    [[ -d "/boot" ]] || ewarn "/boot doesnt exist"
+    if [ "${1}" != "nomountcheck" ] ; then
+      mount | grep boot || mount /boot || eexit "Failed to mount /boot"
+    fi
+    make install || eexit "Running make install failed, exitting."
+    mkdir -p /boot/efi/boot || eexit "Couldn't create /boot/efi/boot"
+    mkdir -p /boot/grub || eexit "Couldn't create /boot/grub"
+    cp /boot/vmlinuz-$version /boot/efi/boot/bootx64.efi || eexit "Couldn't copy kernel, exitting." 
+    grub2-mkconfig -o /boot/grub/grub.cfg || eexit "grub2-mkconfig failed"
+}
+
+#
+# All done
+#
+
+while [ "$1" ]
+do
+    case "$1" in
+
+        make)
+	    kernel_make;
+        ;;
+
+        install)
+            shift 1;
+	    kernel_install "${1}";
+        ;;
+        *)
+    	    eexit "Command ${HILITE}${1}${BOLD} not recognized, exitting. Try ${HILITE}make${BOLD} or ${HILITE}install${BOLD}"
+        ;;
+    esac
+done
+ 
+popd > /dev/null
+edone "Work on Kernel $version succesfully compleeted."

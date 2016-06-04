@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+
+if [ `which lshw` ]; then 
+  if [ -f /proc/config ]; then  
+    echo "# Drivers as seen by lshw grepped against /proc/config"
+    lshw | grep driver | sed 's/.*driver=//g' | awk '{ print $1 }' | uniq -u | awk '{ print toupper($0)}'  | zgrep -f - /proc/config | sed '/^#/ d'
+  else
+    echo "# Drivers as seen by lshw"
+    lshw | grep driver | sed 's/.*driver=//g' | awk '{ print $1 }' | uniq -u | awk '{ print toupper($0)}' 
+  fi  
+  
+  else
+  if [ -f /proc/config ]; then
+    echo "# Drivers as seen by lspci grepped against /proc/config"
+    lspci -k | grep driver | uniq | awk '{print toupper($0)}' | sed 's/KERNEL DRIVER IN USE: //g' | sed 's/^[ \t]*//' | zgrep -f - /proc/config | sed '/^#/ d'
+  else
+    echo "# Drivers as seen by lspci"
+    lspci -k | grep driver | uniq | awk '{print toupper($0)}' | sed 's/KERNEL DRIVER IN USE: //g' | sed 's/^[ \t]*//' 
+  fi
+fi  
