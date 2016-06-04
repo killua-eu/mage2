@@ -43,28 +43,50 @@ done
 
 # zgrep, unlike zcat, works on both, compressed and auncompressed files.
 # zgrep also doesn't signal eof such as zless or zmore.
-# {PARAM,VALUE} shall be from the requirements set
-# {CONFP,CONFV} shall be from the kernel .config set
+# {WANT_PARAM,WANT_VALUE} shall be from the requirements set
+# {HAVE_PARAM,HAVE_VALUE} shall be from the kernel .config set
 zgrep -h . ${REQUIREMENTS} | while read LINE; do 
-  PARAM=`printf "$LINE" | grep ^[^#] | sed 's:#.*$::g' | awk -F'=' '{print $1}'`
-  VALUE=`printf "$LINE" | grep ^[^#] | sed 's:#.*$::g' | awk -F'=' '{print $2}' |  sed 's/^[ \t]*//;s/[ \t]*$//'`
-
-  if [ -n "${PARAM}" ]; then
-     CONFP=`zgrep "${PARAM}=" ${1}`
-     CONFV=`echo "${CONFP}" | awk -F'=' '{print $2}'`
-     CONFP=`echo "${CONFP}" | awk -F'=' '{print $1}'`
+  WANT_PARAM=`printf "$LINE" | grep ^[^#] | sed 's:#.*$::g' | awk -F'=' '{print $1}'`
+  WANT_VALUE=`printf "$LINE" | grep ^[^#] | sed 's:#.*$::g' | awk -F'=' '{print $2}' |  sed 's/^[ \t]*//;s/[ \t]*$//'`
+  if [ -n "${WANT_PARAM}" ]; then # WANT_PARAM is not null
+ 
+     ### search for the param and value in the HAVE set
+     HAVE_PARAM=`zgrep "${WANT_PARAM}=" ${1}`
+     HAVE_VALUE=`echo "${HAVE_PARAM}" | awk -F'=' '{print $2}'`
+     HAVE_PARAM=`echo "${HAVE_PARAM}" | awk -F'=' '{print $1}'`
      
-     if echo "${CONFV}" | grep -iq "${VALUE}"; then # Case insensitive comparison. `if [ "${CONFV}" =~ "${VALUE}" ]; then` didn't work for whatever reason.
-       [[ "${!#}" = "problems" ]] || echo "${GOOD}${CONFP}=${CONFV}" # ${!#} is the "last parameter" equivalent, replaces ${3}
+     ### (HAVE = WANT) branch
+     if echo "${HAVE_VALUE}" | grep -iq "${WANT_VALUE}"; then # Grep used as a case insensitive comparison..
+         # show what's good only when problems parameter is not set
+         [[ "${!#}" = "problems" ]] || echo "${GOOD}${HAVE_PARAM}=${HAVE_VALUE}" # ${!#} is the "last parameter" equivalent, replaces ${3}
+
+     ### (HAVE != WANT) branch    
      else
-       shopt -s nocasematch
-       [[ -n "${CONFV}" ]] && echo "${BAD}${CONFP}=${CONFV}${NORMAL}   [expected value: ${VALUE}]"
-       if ! [ "${VALUE}" = "n" ]; then { # TODO nocasematch doesnt work here for whatever reasons, replace with nN
-         [[ -n "${CONFV}" ]] || echo "${WARN}${PARAM}=${VALUE}${NORMAL}   [option not set at all]"
-       }
-       fi
-       shopt -u nocasematch
+     
+         ### (HAVE != WANT) && (HAVE not NULL)
+         if [ -n "${HAVE_VALUE}" ]; then  # value in kernel is not null but something else then expected
+
+             ### (HAVE != WANT) && (HAVE not NULL) && (WANT = n) while (HAVE != n)
+             if [ "${WANT_VALUE}" = "n" ] || [ "${WANT_VALUE}" = "N" ]; then  
+                echo "${BAD}${HAVE_PARAM}=${HAVE_VALUE}${NORMAL}   [expected value: ${WANT_VALUE}]"         
+             fi
+             if [ "${WANT_VALUE}" = "y" ] || [ "${WANT_VALUE}" = "Y" ] || [ "${WANT_VALUE}" = "m" ] || [ "${WANT_VALUE}" = "M" ]; then
+                 ### (HAVE != WANT) && (HAVE not NULL) && (WANT = m|y) while (HAVE = y|m)
+                 if [ "${HAVE_VALUE}" = "y" ] || [ "${HAVE_VALUE}" = "Y" ] || [ "${HAVE_VALUE}" = "m" ] || [ "${HAVE_VALUE}" = "M" ]; then
+                     echo "${WARN}${HAVE_PARAM}=${HAVE_VALUE}${NORMAL}   [expected value: ${WANT_VALUE}]"
+                 ### (HAVE != WANT) && (HAVE not NULL) && (WANT = m|y) while (HAVE != y|m)
+                 else 
+                     echo "${BAD}${HAVE_PARAM}=${HAVE_VALUE}${NORMAL}   [expected value: ${WANT_VALUE}]" 
+                 fi    
+             fi
+         else
+             ### (HAVE != WANT) && (HAVE == NULL)
+             if [ "${WANT_VALUE}" = "n" ] || [ "${WANT_VALUE}" = "N" ]; then
+                 echo "${HILITE}${WANT_PARAM}=${WANT_VALUE}${NORMAL}   [option not set, while 'n' is required]"    
+             else 
+                 echo "${BAD}${WANT_PARAM}=${WANT_VALUE}${NORMAL}   [option not set at all, but should have been]"
+             fi
+         fi 
      fi
-    echo Hello | grep -iq hello; 
   fi
 done

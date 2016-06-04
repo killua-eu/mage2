@@ -119,8 +119,6 @@ CONFIG_VIRTIO_CONSOLE=m
 CONFIG_VIRTIO_NET=m
 CONFIG_SCSI_VIRTIO=m
 CONFIG_VIRTIO_BLK=m
-CONFIG_NET_9P_VIRTIO=m
-CONFIG_NET_9P=m
 CONFIG_ATA_OVER_ETH=m
 
 #######################
@@ -145,7 +143,6 @@ CONFIG_GRKERNSEC_PROC=N             # sys-apps/systemd-218
 CONFIG_GENTOO_LINUX_INIT_SYSTEMD=Y  # sys-apps/systemd
 CONFIG_UEVENT_HELPER_PATH=""        # sys-apps/systemd
 CONFIG_MEMCG_SWAP=y		    # app-emulation/libvirt
-CONFIG_MEMCG_KMEM=y		    # app-emulation/libvirt
 CONFIG_TMPFS_XATTR=y       # systemd-226-r2
 CONFIG_DMIID=y       # systemd-226-r2
 CONFIG_EPOLL=y       # systemd-226-r2
