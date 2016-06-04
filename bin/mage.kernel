@@ -42,7 +42,8 @@ version=`readlink /usr/src/linux | cut -c7-`
 
 kernel_make() {
     einfo "Running ${BOLD}make && make modules_install${NORMAL} on the (`readlink /usr/src/linux`) kernel"
-    make && make modules_install || eexit "Running ${BOLD}make && make modules_install${NORMAL} failed, exitting."
+    cores=`cat /proc/cpuinfo | grep processor | wc -l`
+    make -j${cores} && make modules_install || eexit "Running ${BOLD}make && make modules_install${NORMAL} failed, exitting."
 }
 #
 # Install
