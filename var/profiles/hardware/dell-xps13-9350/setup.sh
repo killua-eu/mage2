@@ -16,3 +16,7 @@ einfo "Set SATA Operation to AHCI (will break your Windows boot but who cares)"
 # https://forums.gentoo.org/viewtopic-t-938502-start-0.html
 # https://forums.gentoo.org/viewtopic-t-1040854-start-0.html
 # https://wiki.gentoo.org/wiki/Refind
+
+#GRUB_CMDLINE_LINUX="console=tty1 pcie_aspm=force i915.enable_fbc=1 i915.enable_rc6=7 acpi_backlight=vendor"
+#GRUB_GFXMODE=3200x1800
+#GRUB_GFXPAYLOAD_LINUX=keep
