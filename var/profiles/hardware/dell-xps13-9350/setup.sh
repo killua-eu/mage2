@@ -10,3 +10,9 @@ einfo "Set SATA Operation to AHCI (will break your Windows boot but who cares)"
 
 # adding GRUB_PLATFORMS="efi-64 pc"  to /etc/portage/make.conf
 # emerge -uDN world
+
+#reconfigure /etc/default/grub
+
+# https://forums.gentoo.org/viewtopic-t-938502-start-0.html
+# https://forums.gentoo.org/viewtopic-t-1040854-start-0.html
+# https://wiki.gentoo.org/wiki/Refind

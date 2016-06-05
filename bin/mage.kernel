@@ -41,33 +41,35 @@ version=`readlink /usr/src/linux | cut -c7-`
 # 
 
 kernel_make() {
-    einfo "Running ${BOLD}make && make modules_install${NORMAL} on the (`readlink /usr/src/linux`) kernel"
     cores=`cat /proc/cpuinfo | grep processor | wc -l`
-    make -j${cores} && make modules_install || eexit "Running ${BOLD}make && make modules_install${NORMAL} failed, exitting."
+    einfo "Running ${BOLD}make -j${cores}${NORMAL} on the (`readlink /usr/src/linux`) kernel"
+    make -j${cores} || eexit "Running ${BOLD}make -j${cores}${NORMAL} failed, exitting."
+    einfo "Running ${BOLD}make modules_install${NORMAL} on the (`readlink /usr/src/linux`) kernel"
+    make modules_install || eexit "Running ${BOLD}make modules_install${NORMAL} failed, exitting."
 }
 #
 # Install
 # 
 
 kernel_install() {
-    einfo "Installing the (`readlink /usr/src/linux`) kernel into /boot"
+    einfo "Installing the (`readlink /usr/src/linux`) kernel into /boot ..."
     [[ -d "/boot" ]] || ewarn "/boot doesnt exist"
     if [ "${1}" != "nomountcheck" ] ; then
       mount | grep boot || mount /boot || eexit "Failed to mount /boot"
     fi
+    einfo "Running make install ..."
     make install || eexit "Running make install failed, exitting."
+    einfo "Setting up EFI and GRUB ..."
     mkdir -p /boot/efi/boot || eexit "Couldn't create /boot/efi/boot"
     mkdir -p /boot/grub || eexit "Couldn't create /boot/grub"
+    einfo "Copying the kernel to the default UEFI kernel location"
     cp /boot/vmlinuz-$version /boot/efi/boot/bootx64.efi || eexit "Couldn't copy kernel, exitting." 
-    grub2-mkconfig -o /boot/grub/grub.cfg || eexit "grub2-mkconfig failed"
 }
 
 #
 # All done
 #
 
-while [ "$1" ]
-do
     case "$1" in
 
         make)
@@ -82,7 +84,6 @@ do
     	    eexit "Command ${HILITE}${1}${BOLD} not recognized, exitting. Try ${HILITE}make${BOLD} or ${HILITE}install${BOLD}"
         ;;
     esac
-done
- 
+
+    
 popd > /dev/null
-edone "Work on Kernel $version succesfully compleeted."

@@ -120,13 +120,15 @@ einfo "Set the disk to install stuff on (usually */dev/sda*)" && read dev1
 # it will be appended via ${1} from the bootstrap/env script with userspace settings (i.e. init=)
 [[ `echo "${dev1}" | grep nvme` ]] && dev1="${dev1}p" 
 echo "GRUB_CMDLINE_LINUX=\"rootfstype=btrfs rootflags=device=${dev1}3,subvol=@ dobtrfs ${1}\"" >> /etc/default/grub
+einfo "Running grub2-mkconfig ..."
+grub2-mkconfig -o /boot/grub/grub.cfg  || eexit "grub2-mkconfig failed"
 
-grub2-install "/dev/${dev1}"
-#grub2-install "/dev/${dev2}" # raid1 setup
-grub2-mkconfig -o /boot/grub/grub.cfg
+grub2-install --efi-directory=/boot/efi
+#grub2-install "/dev/${dev1}" # raid1 setup not uefi
+#grub2-install "/dev/${dev2}" # raid1 setup not uefi
 echo "
 # <fs>              <mountpoint>    <type>      <opts>                                                                         <dump/pass>
-LABEL="UEFI"        /boot           ext4        noauto,noatime                                                                  1 2
+LABEL="UEFI"        /boot/efi       vfat        noauto,noatime                                                                  1 2
 LABEL="SWAP"        none            swap        sw                                                                              0 0
 LABEL="BTRFS"       /               btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,subvol=@                   0 0
 LABEL="BTRFS"       /tmp            btrfs       defaults,space_cache,noatime,compress=lzo,autodefrag,nodatacow,subvol=@/tmp     0 0
